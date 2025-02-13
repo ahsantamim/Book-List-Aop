@@ -1,53 +1,49 @@
 'use client';
 
 import { useState } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
-export default function SignUp() {
+interface SignUpProps {
+  onSuccess?: () => void;
+}
+
+export default function SignUp({ onSuccess }: SignUpProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
-      
-      // Set the session cookie
-      const sessionResponse = await fetch('/api/auth/session', {
+      // Register user through our API
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-      });
-
-      if (!sessionResponse.ok) {
-        throw new Error('Failed to create session');
-      }
-      
-      // Create user in database
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create user in database');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create account');
       }
 
-      router.push('/books');
+      // Show success message and redirect to sign in
+      toast.success('Account created successfully! Please sign in with your credentials.');
+      onSuccess?.();
+      
+      // Clear the form
+      setEmail('');
+      setPassword('');
     } catch (err) {
-      setError('Failed to create account');
       console.error(err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

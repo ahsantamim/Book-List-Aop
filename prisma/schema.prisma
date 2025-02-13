@@ -26,7 +26,8 @@ model Book {
   id          String   @id @default(cuid())
   title       String
   author      String
-  description String?
+  genre       String
+  description String
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   createdAt   DateTime @default(now())

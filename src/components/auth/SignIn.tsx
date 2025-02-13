@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -44,10 +45,13 @@ export default function SignIn() {
         throw new Error('Failed to verify user in database');
       }
 
+      toast.success('Signed in successfully!');
       router.push('/books');
     } catch (err) {
-      setError('Failed to sign in');
       console.error(err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -85,10 +89,13 @@ export default function SignIn() {
         throw new Error('Failed to verify user in database');
       }
 
+      toast.success('Signed in with Google successfully!');
       router.push('/books');
     } catch (err) {
-      setError('Failed to sign in with Google');
       console.error(err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -136,17 +143,18 @@ export default function SignIn() {
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
-        </form>
 
-        <div>
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 border-gray-300 disabled:bg-gray-100"
-          >
-            {isLoading ? 'Signing in...' : 'Sign in with Google'}
-          </button>
-        </div>
+          <div>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-100"
+            >
+              {isLoading ? 'Signing in...' : 'Sign in with Google'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

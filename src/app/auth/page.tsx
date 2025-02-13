@@ -6,6 +6,7 @@ import SignIn from '@/components/auth/SignIn';
 import SignUp from '@/components/auth/SignUp';
 import { useAuth } from '@/context/auth-context';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { Toaster } from 'react-hot-toast';
 
 export default function AuthPage() {
   const [isSignIn, setIsSignIn] = useState(true);
@@ -32,6 +33,7 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Toaster position="top-center" />
       <div className="max-w-md mx-auto pt-8">
         <div className="flex justify-center space-x-4 mb-8">
           <button
@@ -55,7 +57,13 @@ export default function AuthPage() {
             Sign Up
           </button>
         </div>
-        {isSignIn ? <SignIn /> : <SignUp />}
+        {isSignIn ? (
+          <SignIn />
+        ) : (
+          <SignUp onSuccess={() => {
+            setIsSignIn(true);
+          }} />
+        )}
       </div>
     </div>
   );
