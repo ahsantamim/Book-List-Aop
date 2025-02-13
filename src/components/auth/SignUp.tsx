@@ -1,83 +1,118 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
+import { EnvelopeIcon, LockClosedIcon, UserIcon } from '@heroicons/react/24/outline';
 
-interface SignUpProps {
-  onSuccess?: () => void;
-}
-
-export default function SignUp({ onSuccess }: SignUpProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
+  const { signUp, signInWithGoogle } = useAuth();
+  const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
-      // Register user through our API
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create account');
-      }
-
-      // Show success message and redirect to sign in
-      toast.success('Account created successfully! Please sign in with your credentials.');
-      onSuccess?.();
-      
-      // Clear the form
-      setEmail('');
-      setPassword('');
-    } catch (err) {
-      console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      await signUp(email, password, name);
+      toast.success('Account created successfully!');
+      router.push('/books');
+    } catch (error) {
+      console.error('Auth error:', error);
+      toast.error(error instanceof Error ? error.message : 'Authentication failed');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      toast.success('Welcome!');
+      router.push('/books');
+    } catch (error) {
+      console.error('Google auth error:', error);
+      toast.error('Google authentication failed');
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && <p className="text-red-500 text-center">{error}</p>}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+    >
+      <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10 border border-gray-100">
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Full Name
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <UserIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
               <input
-                type="email"
+                id="name"
+                name="name"
+                type="text"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md 
+                         shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 
+                         focus:border-blue-500 text-gray-900 text-base"
+                placeholder="Enter your full name"
               />
             </div>
-            <div>
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email address
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <EnvelopeIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
               <input
-                type="password"
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
+                className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md 
+                         shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 
+                         focus:border-blue-500 text-gray-900 text-base"
+                placeholder="Enter your email"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <LockClosedIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md 
+                         shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 
+                         focus:border-blue-500 text-gray-900 text-base"
+                placeholder="Create a password"
               />
             </div>
           </div>
@@ -86,13 +121,49 @@ export default function SignUp({ onSuccess }: SignUpProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400"
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md 
+                       shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 
+                       disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
-              {isLoading ? 'Creating account...' : 'Sign up'}
+              {isLoading ? (
+                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                'Create Account'
+              )}
             </button>
           </div>
         </form>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-300 
+                       rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 
+                       hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 
+                       focus:ring-blue-500 transition-colors duration-200"
+            >
+              <img
+                className="h-5 w-5"
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="Google logo"
+              />
+              <span>Google</span>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

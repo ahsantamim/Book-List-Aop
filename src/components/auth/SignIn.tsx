@@ -1,135 +1,98 @@
 'use client';
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/context/auth-context';
+import { motion } from 'framer-motion';
+import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 
 export default function SignIn() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { signInWithGoogle } = useAuth();
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
-      
-      // Set the session cookie
-      const sessionResponse = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!sessionResponse.ok) {
-        throw new Error('Failed to create session');
-      }
-      
-      // Create user in database (will be ignored if user already exists)
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to verify user in database');
-      }
-
-      toast.success('Signed in successfully!');
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success('Signed in successfully');
       router.push('/books');
-    } catch (err) {
-      console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
-      setError(errorMessage);
-      toast.error(errorMessage);
+    } catch (error) {
+      console.error('Error signing in:', error);
+      toast.error('Failed to sign in. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setError('');
-    const provider = new GoogleAuthProvider();
     try {
-      const userCredential = await signInWithPopup(auth, provider);
-      const token = await userCredential.user.getIdToken();
-      
-      // Set the session cookie
-      const sessionResponse = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!sessionResponse.ok) {
-        throw new Error('Failed to create session');
-      }
-      
-      // Create user in database (will be ignored if user already exists)
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to verify user in database');
-      }
-
-      toast.success('Signed in with Google successfully!');
+      await signInWithGoogle();
+      toast.success('Welcome!');
       router.push('/books');
-    } catch (err) {
-      console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Google auth error:', error);
+      toast.error('Google authentication failed');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleEmailSignIn}>
-          {error && <p className="text-red-500 text-center">{error}</p>}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+    >
+      <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10 border border-gray-100">
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email address
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <EnvelopeIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
               <input
+                id="email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md 
+                         shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 
+                         focus:border-blue-500 text-gray-900 text-base"
+                placeholder="Enter your email"
               />
             </div>
-            <div>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <LockClosedIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
               <input
+                id="password"
+                name="password"
                 type="password"
+                autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
+                className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md 
+                         shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 
+                         focus:border-blue-500 text-gray-900 text-base"
+                placeholder="Enter your password"
               />
             </div>
           </div>
@@ -138,24 +101,49 @@ export default function SignIn() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400"
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md 
+                       shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 
+                       disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-
-          <div>
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-100"
-            >
-              {isLoading ? 'Signing in...' : 'Sign in with Google'}
+              {isLoading ? (
+                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                'Sign in'
+              )}
             </button>
           </div>
         </form>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-300 
+                       rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 
+                       hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 
+                       focus:ring-blue-500 transition-colors duration-200"
+            >
+              <img
+                className="h-5 w-5"
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="Google logo"
+              />
+              <span>Google</span>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

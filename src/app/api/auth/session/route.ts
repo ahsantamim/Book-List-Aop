@@ -40,3 +40,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE() {
+  try {
+    cookies().delete('session');
+    return NextResponse.json({ status: 'success' });
+  } catch (error) {
+    console.error('Error clearing session:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
