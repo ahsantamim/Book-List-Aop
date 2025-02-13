@@ -28,6 +28,7 @@ model Book {
   author      String
   genre       String
   description String
+  rating      Int      @default(0)
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   createdAt   DateTime @default(now())

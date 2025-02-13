@@ -4,6 +4,7 @@ import { memo, useState } from 'react';
 import { TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import EditBookModal from './EditBookModal';
+import RatingStars from './RatingStars';
 
 interface Book {
   id: string;
@@ -11,16 +12,18 @@ interface Book {
   author: string;
   genre: string;
   description: string;
+  rating: number;
   createdAt: string;
 }
 
 interface BookCardProps {
   book: Book;
   onDelete: (id: string) => Promise<void>;
-  onUpdate: (id: string, data: Omit<Book, 'id' | 'createdAt'>) => Promise<void>;
+  onUpdate: (id: string, data: Omit<Book, 'id' | 'createdAt' | 'rating'>) => Promise<void>;
+  onRate: (id: string, rating: number) => Promise<void>;
 }
 
-const BookCard = memo(function BookCard({ book, onDelete, onUpdate }: BookCardProps) {
+const BookCard = memo(function BookCard({ book, onDelete, onUpdate, onRate }: BookCardProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -38,13 +41,24 @@ const BookCard = memo(function BookCard({ book, onDelete, onUpdate }: BookCardPr
     }
   };
 
-  const handleUpdate = async (updatedData: Omit<Book, 'id' | 'createdAt'>) => {
+  const handleUpdate = async (updatedData: Omit<Book, 'id' | 'createdAt' | 'rating'>) => {
     try {
       await onUpdate(book.id, updatedData);
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Error updating book:', error);
       throw error;
+    }
+  };
+
+  const handleRate = async (rating: number) => {
+    if (!book.id) return;
+    
+    try {
+      await onRate(book.id, rating);
+    } catch (error) {
+      console.error('Failed to rate book:', error);
+      // Error will be handled by the parent component
     }
   };
 
@@ -75,10 +89,13 @@ const BookCard = memo(function BookCard({ book, onDelete, onUpdate }: BookCardPr
               </button>
             </div>
           </div>
-          <div className="mb-4">
+          <div className="mb-2">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
               {book.genre}
             </span>
+          </div>
+          <div className="mb-3">
+            <RatingStars rating={book.rating} onRate={handleRate} />
           </div>
           <p className="text-gray-600 text-sm line-clamp-3">{book.description}</p>
           <div className="mt-4 text-xs text-gray-500">
