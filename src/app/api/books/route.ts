@@ -73,3 +73,56 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const user = await getUserFromSession();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const bookId = searchParams.get('id');
+    
+    if (!bookId) {
+      return NextResponse.json({ error: 'Book ID is required' }, { status: 400 });
+    }
+
+    const { title, author, genre, description } = await request.json();
+
+    if (!title || !author || !genre || !description) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Verify book belongs to user
+    const existingBook = await prisma.book.findUnique({
+      where: { id: bookId },
+    });
+
+    if (!existingBook) {
+      return NextResponse.json({ error: 'Book not found' }, { status: 404 });
+    }
+
+    if (existingBook.userId !== user.uid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const updatedBook = await prisma.book.update({
+      where: { id: bookId },
+      data: {
+        title,
+        author,
+        genre,
+        description,
+      },
+    });
+
+    return NextResponse.json(updatedBook);
+  } catch (error) {
+    console.error('Error updating book:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

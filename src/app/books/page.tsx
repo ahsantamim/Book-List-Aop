@@ -96,6 +96,32 @@ export default function BooksPage() {
     }
   };
 
+  const handleUpdateBook = async (id: string, bookData: Omit<Book, 'id' | 'createdAt' | 'userId'>) => {
+    try {
+      const response = await fetch(`/api/books?id=${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookData),
+      });
+
+      if (!response.ok) throw new Error('Failed to update book');
+      const updatedBook = await response.json();
+
+      setBooks(prevBooks =>
+        prevBooks.map(book =>
+          book.id === id ? { ...book, ...updatedBook } : book
+        )
+      );
+      toast.success('Book updated successfully! 📚');
+    } catch (error) {
+      console.error('Error updating book:', error);
+      toast.error('Failed to update book. Please try again.');
+      throw error;
+    }
+  };
+
   const uniqueGenres = useMemo(() => {
     const genres = new Set(books.map(book => book.genre));
     return ['all', ...Array.from(genres)];
@@ -141,7 +167,7 @@ export default function BooksPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">My Books</h1>
         <button
@@ -234,7 +260,7 @@ export default function BooksPage() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <BookCard book={book} onDelete={handleDeleteBook} />
+                <BookCard book={book} onDelete={handleDeleteBook} onUpdate={handleUpdateBook} />
               </motion.div>
             ))}
           </div>
