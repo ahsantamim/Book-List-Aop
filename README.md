@@ -154,6 +154,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📧 Contact
 
-Your Name - [your-email@example.com](mailto:your-email@example.com)
+Your Name - [ahsanulkarim.dev@gmail.com](mailto:ahsanulkarim.dev@gmail.com)
 
-Project Link: [https://github.com/your-username/book-list-manager](https://github.com/your-username/book-list-manager)
+Project Link: [https://github.com/ahsantamim/book-list-app](https://github.com/ahsantamim/book-list-app)
